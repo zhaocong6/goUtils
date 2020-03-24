@@ -2,7 +2,6 @@ package chanlock
 
 import (
 	"sync"
-	"sync/atomic"
 	"time"
 )
 
@@ -22,6 +21,8 @@ type ChanLock struct {
 }
 
 //实例化一个lock结构体
+//延迟绑定给c结构体实例
+//使用mutex控制并行
 func (c *ChanLock) newChan() {
 	c.Mutex.Lock()
 	defer c.Mutex.Unlock()
@@ -34,7 +35,7 @@ func (c *ChanLock) newChan() {
 
 //加锁
 func (c *ChanLock) Lock() {
-	if atomic.CompareAndSwapInt32(&c.state, waited, waited) {
+	if c.state == waited {
 		c.newChan()
 	}
 
@@ -52,7 +53,7 @@ func (c *ChanLock) Unlock() {
 //尝试加锁
 //失败后, 返回false并停止定时器
 func (c *ChanLock) TryLock(timeout time.Duration) bool {
-	if atomic.CompareAndSwapInt32(&c.state, waited, waited) {
+	if c.state == waited {
 		c.newChan()
 	}
 
