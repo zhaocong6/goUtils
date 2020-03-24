@@ -8,46 +8,52 @@ import (
 )
 
 func TestChanLock_Lock(t *testing.T) {
-	var wg sync.WaitGroup
-	wg.Add(100)
+	var (
+		wg    sync.WaitGroup
+		l     ChanLock
+		n     int
+		total = 1000
+	)
 
-	l := NewLock()
+	wg.Add(total)
 
-	for i := 0; i < 100; i++ {
-		i := i
+	for i := 0; i < total; i++ {
 		go func() {
 			l.Lock()
 			defer func() {
 				wg.Done()
 				l.Unlock()
 			}()
-
-			time.Sleep(time.Millisecond)
-			fmt.Println(i)
+			n++
 		}()
 	}
 
 	wg.Wait()
+
+	fmt.Println(total == n, n)
 }
 
 func TestChanLock_TryLock(t *testing.T) {
-	l := NewLock()
+	var (
+		l     ChanLock
+		n     int
+		total = 1000
+	)
 
-	for i := 0; i < 100; i++ {
-		i := i
+	for i := 0; i < total; i++ {
 		go func() {
-			if ok := l.TryLock(time.Nanosecond); ok {
+			//测试时注意timeout时间
+			//过短可能导致try失败
+			if ok := l.TryLock(time.Millisecond * 100); ok {
 				defer func() {
 					l.Unlock()
 				}()
 
-				time.Sleep(time.Millisecond)
-				fmt.Println(i)
-			} else {
-				fmt.Println("lock fail")
+				n++
 			}
 		}()
 	}
 
-	time.Sleep(time.Second)
+	time.Sleep(time.Millisecond * 100)
+	fmt.Println(total == n, n)
 }
