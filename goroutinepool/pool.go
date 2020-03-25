@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/zhaocong6/goUtils/chanlock"
 	"log"
+	"runtime/debug"
 )
 
 type pool struct {
@@ -38,7 +39,7 @@ func (p *pool) build() {
 				case co := <-p.jobs:
 					func() {
 						//异常恢复
-						defer catchRecover(runID)
+						defer p.catchRecover(runID)
 						if err := co.Handle(); err != nil {
 							panic(err)
 						}
@@ -55,8 +56,11 @@ func (p *pool) send(j Job) {
 }
 
 //异常恢复
-func catchRecover(runID int) {
+func (p *pool) catchRecover(runID int) {
 	if err := recover(); err != nil {
+		p.Lock()
 		log.Printf("exec worker %d error: %s", runID, err)
+		debug.PrintStack()
+		p.Unlock()
 	}
 }
