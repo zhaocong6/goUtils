@@ -1,39 +1,62 @@
 package goroutinepool
 
-import "github.com/zhaocong6/goUtils/chanlock"
+import (
+	"context"
+	"github.com/zhaocong6/goUtils/chanlock"
+	"log"
+)
 
 type pool struct {
-	capacity int64
-	jobs     chan Job
-	state    int64
-	running  int64
-	l        chanlock.ChanLock
+	chanlock.ChanLock
+	max     int
+	min     int
+	running int
+	jobs    chan Job
+	ctx     context.Context
 }
 
 func (p *pool) build() {
-	p.l.Lock()
-	defer p.l.Unlock()
+	p.Lock()
+	defer p.Unlock()
 
-	if p.running < p.capacity {
+	if p.running < p.max {
 		p.running++
 
-		go func() {
+		go func(runID int) {
+
 			defer func() {
-				p.l.Lock()
+				p.Lock()
 				p.running--
-				p.l.Unlock()
+				p.Unlock()
 			}()
 
 			for {
 				select {
-				case Job := <-p.jobs:
-					Job.Handle()
+				case <-p.ctx.Done():
+					log.Printf("worker %d exit.", runID)
+					return
+				case co := <-p.jobs:
+					func() {
+						//异常恢复
+						defer catchRecover(runID)
+						if err := co.Handle(); err != nil {
+							panic(err)
+						}
+					}()
 				}
 			}
-		}()
+
+		}(p.running)
 	}
 }
 
 func (p *pool) send(j Job) {
 	p.jobs <- j
+}
+
+//异常恢复
+func catchRecover(runID int) {
+	if err := recover(); err != nil {
+		log.Printf("exec worker %d error: %s", runID, err)
+	}
 }

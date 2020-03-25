@@ -1,26 +1,47 @@
 package goroutinepool
 
+import "context"
+
 type Job interface {
 	Handle() error
 }
 
 type Worker struct {
-	pool     *pool
-	Capacity uint64
+	pool   *pool
+	ctx    context.Context
+	cancel context.CancelFunc
 }
 
-func NewPool(w Worker) *Worker {
+//配置参数
+type Options struct {
+	Capacity  int
+	JobBuffer int
+}
+
+//创建连接池
+//实例化连接池结构体
+func NewPool(o Options) *Worker {
+	ctx, cancel := context.WithCancel(context.Background())
+
 	return &Worker{
 		pool: &pool{
-			capacity: int64(w.Capacity),
-			jobs:     make(chan Job, 100),
-			state:    1,
-			running:  0,
+			max:     o.Capacity,
+			jobs:    make(chan Job, o.JobBuffer),
+			running: 0,
+			ctx:     ctx,
 		},
+		ctx:    ctx,
+		cancel: cancel,
 	}
 }
 
+//put任务
 func (w *Worker) Put(j Job) {
 	w.pool.build()
 	w.pool.send(j)
+}
+
+//关闭所有worker
+func (w *Worker) Cancel() {
+	w.cancel()
 }

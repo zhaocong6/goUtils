@@ -1,10 +1,7 @@
 package goroutinepool
 
 import (
-	"bytes"
-	"fmt"
-	"runtime"
-	"strconv"
+	"errors"
 	"testing"
 	"time"
 )
@@ -13,36 +10,73 @@ type Score struct {
 	Num int
 }
 
+type ScorePanic struct {
+	Num int
+}
+
 func TestWorker_Put(t *testing.T) {
-	w := NewPool(Worker{
-		Capacity: 3,
+	w := NewPool(Options{
+		Capacity:  3,
+		JobBuffer: 100,
 	})
 
 	var (
-		j1, j2 Job
+		j Job
 	)
-	j1 = &Score{Num: 1}
-	j2 = &Score{Num: 1}
-	w.Put(j1)
-	w.Put(j2)
+	j = &Score{Num: 1}
+	j = &Score{Num: 1}
+	w.Put(j)
+	w.Put(j)
+	w.Put(j)
+	w.Put(j)
 
-	time.Sleep(time.Second)
-	fmt.Println(w.pool.running)
+	time.Sleep(time.Millisecond * 100)
 }
 
-func getGoroutineID() uint64 {
+func TestWorker_Cancel(t *testing.T) {
+	w := NewPool(Options{
+		Capacity:  3,
+		JobBuffer: 100,
+	})
 
-	b := make([]byte, 64)
-	b = b[:runtime.Stack(b, false)]
-	b = bytes.TrimPrefix(b, []byte("goroutine "))
-	b = b[:bytes.IndexByte(b, ' ')]
-	n, _ := strconv.ParseUint(string(b), 10, 64)
+	var (
+		j Job
+	)
+	j = &Score{Num: 1}
+	j = &Score{Num: 1}
+	w.Put(j)
+	w.Put(j)
+	w.Put(j)
 
-	return n
+	time.Sleep(time.Millisecond * 100)
+	w.Cancel()
+	time.Sleep(time.Millisecond)
+}
+
+func TestWorker_Panic(t *testing.T) {
+	w := NewPool(Options{
+		Capacity:  3,
+		JobBuffer: 100,
+	})
+
+	var (
+		j Job
+	)
+	j = &ScorePanic{Num: 1}
+	j = &ScorePanic{Num: 1}
+	w.Put(j)
+	w.Put(j)
+	w.Put(j)
+
+	time.Sleep(time.Millisecond * 100)
 }
 
 func (s *Score) Handle() error {
 	time.Sleep(time.Millisecond)
-	fmt.Println(s.Num, getGoroutineID())
 	return nil
+}
+
+func (s *ScorePanic) Handle() error {
+	time.Sleep(time.Millisecond)
+	return errors.New("错误")
 }
