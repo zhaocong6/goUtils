@@ -2,13 +2,13 @@ package goroutinepool
 
 import (
 	"context"
-	"github.com/zhaocong6/goUtils/chanlock"
 	"log"
 	"runtime/debug"
+	"sync"
 )
 
 type pool struct {
-	chanlock.ChanLock
+	sync.Mutex
 	max     int
 	min     int
 	running int

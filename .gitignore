@@ -8,3 +8,4 @@ runtime/
 vendor/
 .phpintel/
 .env
+log.log

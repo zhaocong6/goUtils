@@ -33,6 +33,54 @@ func TestChanLock_Lock(t *testing.T) {
 	fmt.Println(total == n, n)
 }
 
+func BenchmarkChanLock_Lock(b *testing.B) {
+	var (
+		wg    sync.WaitGroup
+		l     ChanLock
+		n     int
+		total = 200000
+	)
+
+	wg.Add(total)
+
+	for i := 0; i < total; i++ {
+		go func() {
+			l.Lock()
+			defer func() {
+				wg.Done()
+				l.Unlock()
+			}()
+			n++
+		}()
+	}
+
+	wg.Wait()
+}
+
+func BenchmarkChanLock_MuLock(b *testing.B) {
+	var (
+		wg    sync.WaitGroup
+		l     sync.Mutex
+		n     int
+		total = 200000
+	)
+
+	wg.Add(total)
+
+	for i := 0; i < total; i++ {
+		go func() {
+			l.Lock()
+			defer func() {
+				wg.Done()
+				l.Unlock()
+			}()
+			n++
+		}()
+	}
+
+	wg.Wait()
+}
+
 func TestChanLock_TryLock(t *testing.T) {
 	var (
 		l     ChanLock
