@@ -208,8 +208,8 @@ func newContext() *content {
 
 func formatContext(c *content) []byte {
 	var buffer bytes.Buffer
+	buffer.WriteString(c.Level)
 	buffer.WriteString(c.TimeLocal + " ")
-	buffer.WriteString(c.Level + " ")
 	buffer.WriteString(c.Msg + " ")
 
 	if c.Context != nil {

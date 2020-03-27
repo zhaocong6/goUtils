@@ -23,7 +23,6 @@ func TestDebug(t *testing.T) {
 	}
 
 	wg.Wait()
-
 	log.Println("write log success")
 }
 
@@ -45,5 +44,5 @@ func TestLogger_Write(t *testing.T) {
 
 	wg.Wait()
 
-	log.Println("write log success")
+	//log.Println("write log success")
 }
