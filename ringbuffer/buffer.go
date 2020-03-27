@@ -51,7 +51,7 @@ func (b Buffer) Write(v Value) {
 
 	//验证写入buffer是否已经满了
 	//写入buffer满了以后, 取出最先进入的buffer
-	if len(b.writeBuffer) == b.capacity {
+	if len(b.writeBuffer) == cap(b.writeBuffer) {
 		select {
 		case <-b.ReadBuffer:
 		default:
