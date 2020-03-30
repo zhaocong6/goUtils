@@ -213,7 +213,7 @@ func formatContext(c *content) []byte {
 	buffer.WriteString(c.Msg + " ")
 
 	if c.Context != nil {
-		buffer.WriteString("\r")
+		buffer.WriteString("\n")
 
 		switch c.Context.(type) {
 		case string:
@@ -226,6 +226,6 @@ func formatContext(c *content) []byte {
 		}
 	}
 
-	buffer.WriteString("\r")
+	buffer.WriteString("\n")
 	return buffer.Bytes()
 }
